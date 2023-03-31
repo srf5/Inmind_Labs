@@ -1,4 +1,4 @@
-﻿namespace inmind_Lab1_week1;
+﻿namespace inmind_Lab1_week1.Entities;
 
 public class Student
 {

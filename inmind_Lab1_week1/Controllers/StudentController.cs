@@ -1,67 +1,76 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
+using inmind_Lab1_week1.Entities;
+using inmind_Lab1_week1.Services.Abstraction;
 using Microsoft.AspNetCore.Mvc;
 namespace inmind_Lab1_week1.Controllers;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("[controller]")]
 
 public class Studentcontroller : ControllerBase
 {
-    public List<Student> students;
+    public List<Student> students = new List<Student>() 
+    {
+        new Student() { Id = 1, name = "Alice", Email = "alice@example.com" },
+        new Student() { Id = 2, name = "Bob", Email = "bob@example.com" },
+        new Student() { Id = 3, name = "Charlie", Email = "charlie@example.com" },
+        new Student() { Id = 4, name = "David", Email = "david@example.com" },
+        new Student() { Id = 5, name = "Eve", Email = "eve@example.com" },
+    };
     private readonly IWebHostEnvironment _env;
     private readonly IStudentService _studentService;
+    // private readonly IMediator _mediator;
     public Studentcontroller(IWebHostEnvironment env,IStudentService studentService)
     {
         _studentService = studentService;
         _env = env;
-
-        students = new List<Student>()
-        {
-            new Student() { Id = 1, name = "Alice", Email = "alice@example.com" },
-            new Student() { Id = 2, name = "Bob", Email = "bob@example.com" },
-            new Student() { Id = 3, name = "Charlie", Email = "charlie@example.com" },
-            new Student() { Id = 4, name = "David", Email = "david@example.com" },
-            new Student() { Id = 5, name = "Eve", Email = "eve@example.com" },
-        };
+        // _mediator = mediator;
+       
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<Student>), StatusCodes.Status200OK)]
-    public IActionResult GetAllStudents()
+    public async Task<IActionResult> GetAllStudents()
     {
-        return Ok(students);
+        // var query = new GetAllStudentsQuery();
+        // var result = await _mediator.Send(query);
+
+        return Ok(await _studentService.GetStudentsAsync());
     }
 
     [HttpGet("{id}")]
-    public IActionResult GetStudentById(long id)
+    public async Task<IActionResult> GetStudentById(int id)
     {
-        Student student = students.FirstOrDefault(s => s.Id == id);
-
-        if (student == null)
-        {
-            return NotFound();
-        }
-
-        return Ok(student);
+        var query = new GetStudentByIdQuery { Id = id };
+        // var result = await _mediator.Send(query);
+        return Ok(query);
     }
 
-    [HttpGet("Namefilter")]
-    public IActionResult GetStudentsByName([FromQuery] string name)
+    [HttpGet("NameFilter")]
+    public async Task<ActionResult<List<Student>>> GetStudentByNameFilterAsync(string nameFilter)
     {
-        List<Student> filteredStudents = students.Where(s => s.name.Contains(name)).ToList();
+        var query = new GetStudentByNameFilterQuery { NameFilter = nameFilter };
+        // var result = await _mediator.Send(query);
 
-        return Ok(filteredStudents);
+        // if (result == null || result.Count == 0)
+        // {
+        //     return NotFound();
+        // }
+
+        return Ok(query);
     }
     
     [HttpGet("currentDate")]
-    public IActionResult GetCurrentDate()
+    public async Task<IActionResult> GetCurrentDate()
     {
         try
         {
-            var culture = GetCultureInfoFromHeader(Request.Headers["Accept-Language"]);
-            var formattedDate = DateTime.Now.ToString("D", culture);
-            return Ok(formattedDate);
+            // var query = new GetCurrentDateQuery();
+            // var result = await _mediator.Send(query);
+
+            return Ok();
         }
         catch (CultureNotFoundException)
         {
@@ -82,84 +91,27 @@ public class Studentcontroller : ControllerBase
 
 
     [HttpPost("updateName")]
-    public ActionResult<Student> UpdateName([FromBody] Student studentupdated)
+    public async Task<IActionResult> UpdateStudentName([FromBody] UpdateStudentNameCommand command)
     {
+        // await _mediator.Send(command);
 
-        if (studentupdated == null)
-        {
-            return NotFound();
-        }
-
-        for (int i = 0; i < students.Count; ++i)
-        {
-            if (students[i].Id == studentupdated.Id)
-            {
-                students[i].name = studentupdated.name;
-                return students[i];
-            }
-        }
-
-        return Ok(studentupdated);
+        return Ok();
     }
 
     [HttpPost("upload-image")]
-    public async Task<IActionResult> UploadImage(IFormFile file)
+    public async Task<IActionResult> UploadStudentImage([FromForm] UploadStudentImageCommand command)
     {
-        if (file == null || file.Length == 0)
-        {
-            return BadRequest("Invalid file");
-        }
-
-        var fileName = $"{Guid.NewGuid().ToString()}_{file.FileName}";
-
-        var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads");
-
-        if (!Directory.Exists(uploadsFolder))
-        {
-            Directory.CreateDirectory(uploadsFolder);
-        }
-
-        var filePath = Path.Combine(uploadsFolder, fileName);
-
-        using (var fileStream = new FileStream(filePath, FileMode.Create))
-        {
-            file.CopyTo(fileStream);
-        }
-
-        return Ok(new { Path = $"/uploads/{fileName}" });
+        // var result = await _mediator.Send(command);
+        //
+        // return Ok(result);
+        return Ok();
     }
 
     [HttpDelete("{id}")]
-    public ActionResult<Student> Delete(int id)
+    public async Task<IActionResult> DeleteStudentById(int id)
     {
-        if (id <= 0)
-        {
-            return BadRequest("Invalid student id");
-        }
-
-        bool validation = false;
-        for (int i = 0; i < students.Count; ++i)
-        {
-            if (students[i].Id == id)
-            {
-                validation = true;
-                break;
-            }
-        }
-
-        if (validation == false)
-        {
-            return BadRequest("Invalid student id");
-        }
-        for (int i = 0; i < students.Count; ++i)
-        {
-            if (students[i].Id == id)
-            {
-                var student = students[i];
-                students.Remove(students[i]);
-                return student;
-            }
-        }
+        // var command = new DeleteStudentByIdCommand { Id = id };
+        // var result = await _mediator.Send(command);
 
         return Ok();
     }
